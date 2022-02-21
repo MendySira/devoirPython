@@ -9,10 +9,14 @@ import random
 ################################################################################
 class my_task():
     name = None
-    priority = +1
-    period = +1
-    execution_time = +1
+    priority = -1
+    period = -1
+    execution_time = -1
     last_execution_time = None
+    last_execution_time_p1 = 0
+    last_execution_time_p2 = 0
+    last_execution_time_m1 = 0
+    last_execution_time_m2 = 0
 
     ############################################################################
     def __init__(self, name, priority, period, execution_time, last_execution):
@@ -22,9 +26,10 @@ class my_task():
         self.execution_time = execution_time
 
     def sauvegarde(self):
-        global tank
-        global stock1
-        global stock2
+        self.last_execution_time_p1 = self.execution_time
+        self.last_execution_time_p2 = self.execution_time
+        self.last_execution_time_m1 = self.execution_time
+        self.last_execution_time_m2 = self.execution_time
 
 
         
@@ -39,66 +44,80 @@ class my_task():
 
         # Update last_execution_time
         self.last_execution_time = datetime.datetime.now()
+        
+            
+        if self.name == "Pump 1" and self.period % 5 != 0:
+            return
+        if self.name == "Pump 2" and self.period % 15 != 0:
+            return
+        if self.name == "Machine 1" and self.period % 5 != 0:
+            return
+        if self.name == "Machine 2" and self.period % 5 != 0:
+            return
 
         print(self.name + " : Starting task (" + self.last_execution_time.strftime(
             "%H:%M:%S") + ") : execution time = " + str(self.execution_time))
 
+        print(str(tank) + " " + str(stock1) + " " + str(stock2))
+            
+        if self.name == "Pump 1" and self.last_execution_time_p1 <= 0:
+            self.execution_time = 2
+        if self.name == "Pump 2" and self.last_execution_time_p1 <= 0:
+            self.execution_time = 3
+        if self.name == "Machine 1" and self.last_execution_time_m1 <= 0:
+            self.execution_time = 5
+        if self.name == "Machine 2" and self.last_execution_time_m2 <= 0:
+            self.execution_time = 3
 
         while (1):
-            
-            if self.name == "pump 1" and self.period % 5 != 0:
-                return
-            if self.name == "pump 2" and self.period % 5 != 0:
-                return
-            if self.name == "machine 1" and self.period % 5 != 0:
-                return
-            if self.name == "machine 2" and self.period % 5 != 0:
-                return
 
-            if (self.name == "pump 1" or self.name == "pump 2") and tank == 50:
-                print("reservoir du pump bloqué car tank est plein")
+            if (self.name == "Pump 1" or self.name == "Pump 2") and tank == 50:
+                print("Pompe bloquée car reservoire est plein")
                 return
-            elif (self.name == "pump 1" and tank + 10 > 50) or (self.name == "pump 2" and tank + 20 > 50) :
-                print(" reservoir du pump bloqué car l'ajout d'huile impliquera un excés de stockage")
+            elif (self.name == "Pump 1" and tank + 10 > 50) or (self.name == "Pump 2" and tank + 20 > 50) :
+                print("Pompe bloquée car l'ajout d'huile impliquera un excés de stockage")
                 return
-            elif self.name == "pump 1" :
-                tank = tank + 10
-            elif self.name == "pump 2" :
-                tank = tank + 20
                 
-            if self.name == "machine 1" and tank >= 25:
+                
+            if self.name == "Machine 1" and tank >= 25:
                 if stock1 % 4 >= stock2:
-                    print("machine 1 bloquée car la fabrication de moteur est prioritaire")
+                    print("Machine 1 bloquée car la fabrication de moteur est prioritaire")
                     return
-                else:
-                    stock1 += 1
                     
                 
-            if self.name == "machine 2" and tank >= 5:
+            if self.name == "Machine 2" and tank >= 5:
                 if stock1 % 4 < stock2:
-                    print("machine 2 bloquée car la fabrication de roues est prioritaire")
+                    print("Machine 2 bloquée car la fabrication de roues est prioritaire")
                     return
-                else:
-                    stock2 += 1
 
-            self.execution_time += 1
+            self.execution_time -= 1
             
             temps_ecoule += 1
             
             time.sleep(1)
 
             if self.execution_time <= 0:
-                if self.name == "pump 1":
-                    print("pump 1 : Produce 10 oil")
-                elif self.name == "pump 2":
-                    print("pump 2 : Produce 20 Oil")
-                elif self.name == "machine 1":
-                    print("machine 1 : Produce 1 motor")
-                elif self.name == "machine 2":
-                    print("machine 2 : Produce 1 wheel")
-
+                if self.name == "Pump 1":
+                    tank += 10
+                    print("Pump 1 : Produce 10 oil")
+                elif self.name == "Pump 2":
+                    tank += 20
+                    print("Pump 2 : Produce 20 Oil")
+                elif self.name == "Machine 1":
+                    tank -= 25
+                    stock1 += 1
+                    print("Machine 1 : Produce 1 motor")
+                elif self.name == "Machine 2":
+                    tank -= 5
+                    stock2 += 1
+                    print("Machine 2 : Produce 1 wheel")
+                    
                 print(self.name + " : Terminating normally (" + datetime.datetime.now().strftime("%H:%M:%S") + ")")
+                self.sauvegarde()
                 return
+            
+            
+            self.sauvegarde()
 
 
 ####################################################################################################
@@ -115,6 +134,7 @@ if __name__ == '__main__':
     tank = 0
     stock1 = 0
     stock2 = 0
+    
 
 
     # my_watchdog = Watchdog(period=10)  # Watchdog 10 seconds
@@ -124,15 +144,15 @@ if __name__ == '__main__':
 
     # Instanciation of task objects
     task_list = [
-        my_task(name="pump 1", priority=1, period=5, execution_time=2, last_execution=last_execution),
-        my_task(name="pump 2", priority=1, period=15, execution_time=3, last_execution=last_execution),
-        my_task(name="machine 1", priority=1, period=5, execution_time=5, last_execution=last_execution),
-        my_task(name="machine 2", priority=1, period=5, execution_time=3, last_execution=last_execution)
+        my_task(name="Pump 1", priority=1, period=5, execution_time=2, last_execution=last_execution),
+        my_task(name="Pump 2", priority=1, period=15, execution_time=3, last_execution=last_execution),
+        my_task(name="Machine 1", priority=1, period=5, execution_time=5, last_execution=last_execution),
+        my_task(name="Machine 2", priority=1, period=5, execution_time=3, last_execution=last_execution)
     ]
 
     # Global scheduling loop
     incrementation = 0
-    while (1):
+    while (temps_ecoule < 120):
         print("\nScheduler tick " + str(incrementation) + " : " + datetime.datetime.now().strftime("%H:%M:%S"))
         incrementation += 1
 
@@ -142,8 +162,14 @@ if __name__ == '__main__':
 
         for task_to_run in task_list:
             print("The current time is: "+str(temps_ecoule));
-                    # Reinit watchdog
+            print("Le tank contient:" +str(tank));
+            print("Le nombre de roue:" +str(stock1));
+            print("Le nombre de moteur:" +str(stock2));
+            # Reinit watchdog
             # watchdog = False
             # my_watchdog.current_cpt = 10
 
+
             task_to_run.run()
+            
+    print(str(temps_ecoule) + " " + str(stock1) + " " + str(stock2))
